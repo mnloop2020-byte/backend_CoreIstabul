@@ -29,7 +29,7 @@ No external packages or database are required.
 ## Project Structure
 
 ```text
-backend_CoreIstabul/
+assignment-1-task-management/
 ├── src/
 │   ├── app.js
 │   └── modules/
@@ -37,7 +37,6 @@ backend_CoreIstabul/
 │       │   └── users.js
 │       └── tasks/
 │           └── tasks.js
-├── .gitignore
 ├── package.json
 └── README.md
 ```
@@ -50,7 +49,12 @@ backend_CoreIstabul/
 ## How to Run
 
 1. Clone or download the project.
-2. Open the project directory in your terminal.
+2. Open this assignment's folder in your terminal:
+
+```bash
+cd assignment-1-task-management
+```
+
 3. Run the application:
 
 ```bash
