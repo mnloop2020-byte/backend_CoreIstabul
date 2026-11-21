@@ -1,0 +1,223 @@
+{
+  "info": {
+    "name": "Library Book API",
+    "description": "Requests for the Library Book Management API (Express 5 + TypeScript + Zod). Start the server with `npm run dev`, then run the collection in order: 'Create book' saves the new id in the `bookId` variable used by the requests after it.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api/books" },
+    { "key": "bookId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Success cases",
+      "item": [
+        {
+          "name": "Get all books",
+          "request": { "method": "GET", "url": "{{baseUrl}}" },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns an array', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create book",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"The Pragmatic Programmer\",\n  \"author\": \"Andrew Hunt & David Thomas\",\n  \"genre\": \"Programming\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+                  "const book = pm.response.json();",
+                  "pm.test('available defaults to true', () => pm.expect(book.available).to.eql(true));",
+                  "pm.collectionVariables.set('bookId', book.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get book by id",
+          "request": { "method": "GET", "url": "{{baseUrl}}/{{bookId}}" },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Correct book', () => pm.expect(pm.response.json().id).to.eql(Number(pm.collectionVariables.get('bookId'))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update book (PATCH)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/{{bookId}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"available\": false\n}" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('available is now false', () => pm.expect(pm.response.json().available).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete book",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/{{bookId}}" },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": ["pm.test('Status is 204', () => pm.response.to.have.status(204));"]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Failure cases",
+      "item": [
+        {
+          "name": "Get deleted book -> 404",
+          "request": { "method": "GET", "url": "{{baseUrl}}/{{bookId}}" },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": ["pm.test('Status is 404', () => pm.response.to.have.status(404));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get book with invalid id -> 400",
+          "request": { "method": "GET", "url": "{{baseUrl}}/abc" },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": ["pm.test('Status is 400', () => pm.response.to.have.status(400));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create book with missing fields -> 400",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Only a title\"\n}" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Lists the missing fields', () => {",
+                  "  const fields = pm.response.json().error.details.map(d => d.field);",
+                  "  pm.expect(fields).to.eql(['author', 'genre']);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create book with wrong type -> 400",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Dune\",\n  \"author\": \"Frank Herbert\",\n  \"genre\": \"Sci-Fi\",\n  \"available\": \"yes\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": ["pm.test('Status is 400', () => pm.response.to.have.status(400));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create book with malformed JSON -> 400",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{ \"title\": " }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": ["pm.test('Status is 400', () => pm.response.to.have.status(400));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update book with empty body -> 400",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/1",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{}" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": ["pm.test('Status is 400', () => pm.response.to.have.status(400));"]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unknown route -> 404",
+          "request": { "method": "GET", "url": "http://localhost:3000/api/unknown" },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": ["pm.test('Status is 404', () => pm.response.to.have.status(404));"]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
