@@ -2,6 +2,33 @@
 
 Session 4 assignment: a REST API for managing library books, built with **Express 5**, **TypeScript** and **Zod**. Data is stored in memory.
 
+## Summary: How It Works
+
+**What it is:** a REST API for library books. A client sends HTTP requests (GET, POST, PATCH, DELETE) and gets JSON responses. Data is kept in memory, so it resets when the server restarts.
+
+**Request flow:**
+
+```text
+Request -> Route -> validateBody (POST/PATCH only) -> Controller -> Service -> Response
+                         |                                |            |
+                         +--------- any error thrown -----+------------+--> errorHandler -> JSON error
+```
+
+**What each layer does (one responsibility each):**
+- **Route:** maps a URL + HTTP method to a controller function. It contains no logic.
+- **Controller:** reads the request (params, body), calls the service, and chooses the HTTP status code. It knows about HTTP but not about how data is stored.
+- **Service:** holds the business logic and the in-memory data. It knows nothing about HTTP, so it could be reused or tested alone.
+
+**Why Zod when TypeScript already has types:** TypeScript types exist only while compiling. At runtime, `req.body` can contain anything the client sends. Zod checks the real data when the request arrives, and `z.infer` produces the matching TypeScript type from the same schema, so the rules are written only once.
+
+**POST vs PATCH:** POST needs all required fields. PATCH accepts any subset but at least one field. Both reject unknown fields such as `id`, so a client cannot choose its own id.
+
+**Error handling:** code throws errors (`NotFoundError`, `BadRequestError`, or a Zod error). Express 5 passes errors thrown in route handlers to one central `errorHandler`, which turns each into a JSON response with the right status code. Unexpected errors return a generic 500 and are only logged on the server, so internal details never reach the client.
+
+**Status codes used:** `200` OK, `201` Created (POST), `204` No Content (DELETE), `400` bad request or validation failed, `404` not found, `500` unexpected server error.
+
+**IDs:** URL parameters are always strings, so the controller converts the id to a number and rejects values like `abc` with a 400 before reaching the service.
+
 ## Requirements Checklist
 
 | # | Requirement | Where |

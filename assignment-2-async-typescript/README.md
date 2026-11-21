@@ -2,6 +2,27 @@
 
 Session 2 assignment: a Node.js backend for users and tasks, written in TypeScript with ES Modules (ESM). Every operation is asynchronous (Promises / async-await) and handles both success and failure cases.
 
+## Summary: How It Works
+
+**What it is:** a backend for users and tasks where every operation is asynchronous. Each service function returns a `Promise`, like a real database call would.
+
+**Why async/await:** a database or network call takes time. With `await`, only the current function waits. Node.js keeps running other work in the meantime (the event loop), so one slow operation does not freeze the whole program.
+
+**Typing:** `User` and `Task` are TypeScript interfaces. The input types (`CreateTaskInput`, `UpdateTaskInput`) are derived from `Task` using `Pick` and `Partial`, so the fields are defined only once.
+
+**Failure handling:**
+- A service throws a custom error (`NotFoundError` or `ValidationError`) when something is wrong. Inside an `async` function, `throw` makes the returned Promise **reject**.
+- The caller handles it with `try/catch`. In strict mode the caught `error` has the type `unknown`, so the code checks it with `instanceof` before using it.
+- `createTask` first awaits `getUserById`. If the user does not exist, that rejection passes up and the task is never created.
+
+**Promise.all vs Promise.allSettled:**
+- `Promise.all` runs independent operations in parallel, but fails as soon as one of them fails.
+- `Promise.allSettled` waits for all of them and reports each result (`fulfilled` or `rejected`). The demo uses it to show a success and a failure side by side.
+
+**Data safety:** the services return copies of the stored objects, so changing a result outside the service cannot change the stored data.
+
+**TypeScript + ESM:** the project uses `"module": "NodeNext"`. Imports end with `.js` because Node runs the compiled `.js` files, not the `.ts` sources. `"strict": true` turns on all strict type checks.
+
 ## Requirements Checklist
 
 | # | Requirement | Where |
