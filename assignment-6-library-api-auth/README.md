@@ -293,9 +293,14 @@ I used **Claude Code** (Anthropic, model Claude Opus 5.5) as an assistant for th
 - Rebuilt the Postman collection.
 
 **What I did:**
-- Gave the AI the assignment requirements.
-- Set up my local PostgreSQL 18 and kept all secrets in local `.env` files that are not committed.
-- Imported the Postman collection, set the admin password as a local (not shared) variable, and ran the whole collection against the running server: 37 requests, 49 of 49 checks passed, 0 errors.
+- **Defined the task:** I gave the AI the Session 7 requirements and the permission table, and asked it to build on my Session 6 project.
+- **Provided the environment:** I installed and run PostgreSQL 18 locally. My database password stays in a local `.env` file. I never typed it in the chat, and it is not in the repository.
+- **Tested the API myself in Postman:**
+  - Imported the collection into my workspace.
+  - Set the admin password as a **local variable** (not shared with Postman's cloud), so it is not uploaded anywhere.
+  - Ran all 37 requests against the running server: **49 of 49 checks passed, 0 errors**.
+  - The run covered the full auth flow (register, login, refresh, token reuse, logout) and every row of the permission table.
+- **Avoided a risky shortcut:** when Postman's built-in AI assistant offered to rewrite the collection and send extra requests, I did not run it. That kept the tested collection the same as the one in the repository.
 
 **Key concepts practiced:**
 - Authentication (401: who are you?) vs authorization (403: are you allowed?).
