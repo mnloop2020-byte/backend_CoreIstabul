@@ -1,0 +1,71 @@
+SELECT book_id, title, genre
+FROM books
+ORDER BY book_id
+LIMIT 5 OFFSET 0;
+ book_id |         title          | genre 
+---------+------------------------+-------
+       1 | Palace Walk            | Novel
+       2 | The Thief and the Dogs | Novel
+       3 | Children of the Alley  | Novel
+       4 | My Name Is Red         | Novel
+       5 | Snow                   | Novel
+(5 rows)
+
+SELECT book_id, title, genre
+FROM books
+ORDER BY book_id
+LIMIT 5 OFFSET 5;
+ book_id |          title          |    genre    
+---------+-------------------------+-------------
+       6 | The Museum of Innocence | Novel
+       7 | 1984                    | Dystopian
+       8 | Animal Farm             | Dystopian
+       9 | Clean Code              | Programming
+      10 | Clean Architecture      | Programming
+(5 rows)
+
+SELECT book_id, title, genre
+FROM books
+ORDER BY book_id
+LIMIT 5 OFFSET 15;
+ book_id |          title           |  genre  
+---------+--------------------------+---------
+      16 | And Then There Were None | Mystery
+(1 row)
+
+SELECT
+    count(*)                       AS total_books,
+    ceil(count(*) / 5.0)::int      AS total_pages
+FROM books;
+ total_books | total_pages 
+-------------+-------------
+          16 |           4
+(1 row)
+
+SELECT book_id, title, genre
+FROM books
+ORDER BY book_id
+LIMIT 5;
+ book_id |         title          | genre 
+---------+------------------------+-------
+       1 | Palace Walk            | Novel
+       2 | The Thief and the Dogs | Novel
+       3 | Children of the Alley  | Novel
+       4 | My Name Is Red         | Novel
+       5 | Snow                   | Novel
+(5 rows)
+
+SELECT book_id, title, genre
+FROM books
+WHERE book_id > 5
+ORDER BY book_id
+LIMIT 5;
+ book_id |          title          |    genre    
+---------+-------------------------+-------------
+       6 | The Museum of Innocence | Novel
+       7 | 1984                    | Dystopian
+       8 | Animal Farm             | Dystopian
+       9 | Clean Code              | Programming
+      10 | Clean Architecture      | Programming
+(5 rows)
+

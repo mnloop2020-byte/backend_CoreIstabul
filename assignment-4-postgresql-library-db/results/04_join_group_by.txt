@@ -1,0 +1,101 @@
+SELECT
+    l.loan_id,
+    m.full_name           AS member,
+    b.title               AS book,
+    a.name                AS author,
+    l.loaned_at::date     AS loaned_on,
+    l.due_at::date        AS due_on
+FROM loans   l
+JOIN books   b ON b.book_id   = l.book_id
+JOIN authors a ON a.author_id = b.author_id
+JOIN members m ON m.member_id = l.member_id
+WHERE l.returned_at IS NULL
+ORDER BY l.due_at;
+ loan_id |    member    |                 book                  |      author      | loaned_on  |   due_on   
+---------+--------------+---------------------------------------+------------------+------------+------------
+       9 | Lina Kaya    | Designing Data-Intensive Applications | Martin Kleppmann | 2026-11-01 | 2026-11-15
+      10 | Ahmed Yilmaz | 1984                                  | George Orwell    | 2026-11-10 | 2026-11-24
+      11 | Sara Demir   | Clean Code                            | Robert C. Martin | 2026-11-15 | 2026-11-29
+      12 | Yusuf Celik  | And Then There Were None              | Agatha Christie  | 2026-11-18 | 2026-12-02
+      13 | Omar Haddad  | 1984                                  | George Orwell    | 2026-11-20 | 2026-12-04
+      14 | Mariam Saleh | The Forty Rules of Love               | Elif Shafak      | 2026-11-22 | 2026-12-06
+      15 | Ahmed Yilmaz | My Name Is Red                        | Orhan Pamuk      | 2026-11-25 | 2026-12-09
+(7 rows)
+
+SELECT
+    m.full_name                                   AS member,
+    m.email,
+    b.title                                       AS book,
+    l.due_at::date                                AS due_on,
+    (CURRENT_DATE - l.due_at::date)               AS days_overdue
+FROM loans   l
+JOIN books   b ON b.book_id   = l.book_id
+JOIN members m ON m.member_id = l.member_id
+WHERE l.returned_at IS NULL
+  AND l.due_at < now()
+ORDER BY days_overdue DESC;
+    member    |          email           |                 book                  |   due_on   | days_overdue 
+--------------+--------------------------+---------------------------------------+------------+--------------
+ Lina Kaya    | lina.kaya@example.com    | Designing Data-Intensive Applications | 2026-11-15 |           13
+ Ahmed Yilmaz | ahmed.yilmaz@example.com | 1984                                  | 2026-11-24 |            4
+(2 rows)
+
+SELECT
+    m.member_id,
+    m.full_name,
+    count(l.loan_id)                                       AS total_loans,
+    count(l.loan_id) FILTER (WHERE l.returned_at IS NULL)  AS open_loans
+FROM members m
+LEFT JOIN loans l ON l.member_id = m.member_id
+GROUP BY m.member_id, m.full_name
+ORDER BY total_loans DESC, m.full_name;
+ member_id |  full_name   | total_loans | open_loans 
+-----------+--------------+-------------+------------
+         1 | Ahmed Yilmaz |           3 |          2
+         2 | Sara Demir   |           3 |          1
+         4 | Lina Kaya    |           2 |          1
+         3 | Omar Haddad  |           2 |          1
+         9 | Can Ozturk   |           1 |          0
+         7 | Emre Arslan  |           1 |          0
+         8 | Huda Nasser  |           1 |          0
+         6 | Mariam Saleh |           1 |          1
+         5 | Yusuf Celik  |           1 |          1
+        10 | Noor Abbas   |           0 |          0
+(10 rows)
+
+SELECT
+    a.name                  AS author,
+    count(b.book_id)        AS books,
+    sum(b.total_copies)     AS total_copies,
+    sum(b.available_copies) AS available_copies
+FROM authors a
+JOIN books   b ON b.author_id = a.author_id
+GROUP BY a.author_id, a.name
+HAVING count(b.book_id) > 1
+ORDER BY books DESC, author;
+      author      | books | total_copies | available_copies 
+------------------+-------+--------------+------------------
+ Naguib Mahfouz   |     3 |            7 |                7
+ Orhan Pamuk      |     3 |            6 |                5
+ Agatha Christie  |     2 |            3 |                2
+ Elif Shafak      |     2 |            3 |                2
+ George Orwell    |     2 |            7 |                5
+ Robert C. Martin |     2 |            5 |                4
+(6 rows)
+
+SELECT
+    b.genre,
+    count(DISTINCT b.book_id) AS books_in_genre,
+    count(l.loan_id)          AS times_loaned
+FROM books b
+LEFT JOIN loans l ON l.book_id = b.book_id
+GROUP BY b.genre
+ORDER BY times_loaned DESC, b.genre;
+    genre    | books_in_genre | times_loaned 
+-------------+----------------+--------------
+ Programming |              4 |            5
+ Dystopian   |              2 |            4
+ Novel       |              8 |            4
+ Mystery     |              2 |            2
+(4 rows)
+

@@ -1,0 +1,106 @@
+DROP INDEX IF EXISTS idx_loans_member_id;
+psql:sql/07_index_explain.sql:13: NOTICE:  index "idx_loans_member_id" does not exist, skipping
+DROP INDEX
+SELECT setseed(0.42);
+ setseed 
+---------
+ 
+(1 row)
+
+INSERT INTO members (full_name, email, joined_at)
+SELECT 'Test Member ' || g,
+       'test.member' || g || '@example.com',
+       DATE '2024-01-01' + (g % 600)
+FROM generate_series(1, 5000) AS g;
+INSERT 0 5000
+INSERT INTO loans (book_id, member_id, loaned_at, due_at, returned_at)
+SELECT book_id,
+       member_id,
+       loaned_at,
+       loaned_at + INTERVAL '14 days',
+       loaned_at + (1 + floor(random() * 20)) * INTERVAL '1 day'
+FROM (
+    SELECT 1  + floor(random() * 16)::int   AS book_id,     -- books 1..16
+           11 + floor(random() * 5000)::int AS member_id,   -- the 5,000 test members (ids 11..5010)
+           TIMESTAMPTZ '2024-01-01 10:00+03' + random() * INTERVAL '600 days' AS loaned_at
+    FROM generate_series(1, 200000)
+) AS t;
+INSERT 0 200000
+ANALYZE loans;
+ANALYZE
+ANALYZE members;
+ANALYZE
+SELECT count(*) AS total_loans FROM loans;
+ total_loans 
+-------------
+      200016
+(1 row)
+
+SELECT count(*) AS loans_of_member_42 FROM loans WHERE member_id = 42;
+ loans_of_member_42 
+--------------------
+                 45
+(1 row)
+
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT loan_id, book_id, loaned_at, returned_at
+FROM loans
+WHERE member_id = 42
+ORDER BY loaned_at DESC;
+                                                         QUERY PLAN                                                          
+-----------------------------------------------------------------------------------------------------------------------------
+ Gather Merge  (cost=4138.27..4142.83 rows=40 width=24) (actual time=24.146..50.917 rows=45.00 loops=1)
+   Workers Planned: 1
+   Workers Launched: 1
+   Buffers: shared hit=1705
+   ->  Sort  (cost=3138.26..3138.32 rows=24 width=24) (actual time=5.337..5.339 rows=22.50 loops=2)
+         Sort Key: loaned_at DESC
+         Sort Method: quicksort  Memory: 26kB
+         Buffers: shared hit=1705
+         Worker 0:  Sort Method: quicksort  Memory: 25kB
+         ->  Parallel Seq Scan on loans  (cost=0.00..3137.71 rows=24 width=24) (actual time=0.270..5.295 rows=22.50 loops=2)
+               Filter: (member_id = 42)
+               Rows Removed by Filter: 99986
+               Buffers: shared hit=1667
+ Planning:
+   Buffers: shared hit=25
+ Planning Time: 0.105 ms
+ Execution Time: 50.943 ms
+(17 rows)
+
+CREATE INDEX idx_loans_member_id ON loans (member_id);
+CREATE INDEX
+ANALYZE loans;
+ANALYZE
+SELECT pg_size_pretty(pg_relation_size('loans'))               AS table_size,
+       pg_size_pretty(pg_relation_size('idx_loans_member_id')) AS index_size;
+ table_size | index_size 
+------------+------------
+ 13 MB      | 1432 kB
+(1 row)
+
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT loan_id, book_id, loaned_at, returned_at
+FROM loans
+WHERE member_id = 42
+ORDER BY loaned_at DESC;
+                                                              QUERY PLAN                                                               
+---------------------------------------------------------------------------------------------------------------------------------------
+ Sort  (cost=147.58..147.68 rows=40 width=24) (actual time=0.500..0.501 rows=45.00 loops=1)
+   Sort Key: loaned_at DESC
+   Sort Method: quicksort  Memory: 26kB
+   Buffers: shared hit=45 read=2
+   ->  Bitmap Heap Scan on loans  (cost=4.60..146.52 rows=40 width=24) (actual time=0.455..0.489 rows=45.00 loops=1)
+         Recheck Cond: (member_id = 42)
+         Heap Blocks: exact=45
+         Buffers: shared hit=45 read=2
+         ->  Bitmap Index Scan on idx_loans_member_id  (cost=0.00..4.59 rows=40 width=0) (actual time=0.247..0.247 rows=45.00 loops=1)
+               Index Cond: (member_id = 42)
+               Index Searches: 1
+               Buffers: shared read=2
+ Planning:
+   Buffers: shared hit=23 read=1
+ Planning Time: 0.118 ms
+ Execution Time: 0.512 ms
+(16 rows)
+

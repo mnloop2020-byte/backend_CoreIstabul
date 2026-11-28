@@ -1,0 +1,90 @@
+BEGIN;
+BEGIN
+INSERT INTO loans (book_id, member_id, due_at)
+VALUES (13, 10, now() + INTERVAL '14 days')
+RETURNING loan_id, book_id, member_id, due_at::date AS due_on;
+ loan_id | book_id | member_id |   due_on   
+---------+---------+-----------+------------
+      16 |      13 |        10 | 2026-12-12
+(1 row)
+
+INSERT 0 1
+UPDATE books
+SET available_copies = available_copies - 1
+WHERE book_id = 13
+RETURNING book_id, title, available_copies;
+ book_id |          title          | available_copies 
+---------+-------------------------+------------------
+      13 | The Bastard of Istanbul |                0
+(1 row)
+
+UPDATE 1
+COMMIT;
+COMMIT
+SELECT b.title, b.available_copies,
+       (SELECT count(*) FROM loans WHERE book_id = 13 AND returned_at IS NULL) AS open_loans
+FROM books b
+WHERE b.book_id = 13;
+          title          | available_copies | open_loans 
+-------------------------+------------------+------------
+ The Bastard of Istanbul |                0 |          1
+(1 row)
+
+BEGIN;
+BEGIN
+INSERT INTO loans (book_id, member_id, due_at)
+VALUES (16, 10, now() + INTERVAL '14 days')
+RETURNING loan_id, book_id, member_id;
+ loan_id | book_id | member_id 
+---------+---------+-----------
+      17 |      16 |        10
+(1 row)
+
+INSERT 0 1
+UPDATE books
+SET available_copies = available_copies - 1
+WHERE book_id = 16;
+psql:sql/06_transaction.sql:50: ERROR:  new row for relation "books" violates check constraint "books_available_copies_check"
+DETAIL:  Failing row contains (16, And Then There Were None, 8, Mystery, 1939, 9780000000016, 1, -1).
+ROLLBACK;
+ROLLBACK
+SELECT count(*) AS noor_loans_of_book_16
+FROM loans
+WHERE book_id = 16 AND member_id = 10;
+ noor_loans_of_book_16 
+-----------------------
+                     0
+(1 row)
+
+SELECT title, available_copies
+FROM books
+WHERE book_id = 16;
+          title           | available_copies 
+--------------------------+------------------
+ And Then There Were None |                0
+(1 row)
+
+SELECT count(*) AS loans_before FROM loans;
+ loans_before 
+--------------
+           16
+(1 row)
+
+BEGIN;
+BEGIN
+DELETE FROM loans;
+DELETE 16
+SELECT count(*) AS loans_inside_transaction FROM loans;
+ loans_inside_transaction 
+--------------------------
+                        0
+(1 row)
+
+ROLLBACK;
+ROLLBACK
+SELECT count(*) AS loans_after_rollback FROM loans;
+ loans_after_rollback 
+----------------------
+                   16
+(1 row)
+

@@ -1,0 +1,79 @@
+INSERT INTO authors (name, country)
+VALUES ('Fyodor Dostoevsky', 'Russia')
+RETURNING author_id, name, country;
+ author_id |       name        | country 
+-----------+-------------------+---------
+         9 | Fyodor Dostoevsky | Russia
+(1 row)
+
+INSERT 0 1
+INSERT INTO books (title, author_id, genre, published_year, isbn, total_copies, available_copies)
+VALUES (
+    'Crime and Punishment',
+    (SELECT author_id FROM authors WHERE name = 'Fyodor Dostoevsky'),
+    'Novel', 1866, '9780000000017', 2, 2
+)
+RETURNING book_id, title, author_id, total_copies, available_copies;
+ book_id |        title         | author_id | total_copies | available_copies 
+---------+----------------------+-----------+--------------+------------------
+      17 | Crime and Punishment |         9 |            2 |                2
+(1 row)
+
+INSERT 0 1
+SELECT book_id, title, genre, published_year
+FROM books
+WHERE isbn = '9780000000017';
+ book_id |        title         | genre | published_year 
+---------+----------------------+-------+----------------
+      17 | Crime and Punishment | Novel |           1866
+(1 row)
+
+SELECT book_id, title, published_year, available_copies
+FROM books
+WHERE genre = 'Programming'
+ORDER BY published_year;
+ book_id |                 title                 | published_year | available_copies 
+---------+---------------------------------------+----------------+------------------
+      14 | The Pragmatic Programmer              |           1999 |                2
+       9 | Clean Code                            |           2008 |                2
+      10 | Clean Architecture                    |           2017 |                2
+      11 | Designing Data-Intensive Applications |           2017 |                1
+(4 rows)
+
+UPDATE books
+SET total_copies     = total_copies + 1,
+    available_copies = available_copies + 1
+WHERE isbn = '9780000000017'
+RETURNING book_id, title, total_copies, available_copies;
+ book_id |        title         | total_copies | available_copies 
+---------+----------------------+--------------+------------------
+      17 | Crime and Punishment |            3 |                3
+(1 row)
+
+UPDATE 1
+DELETE FROM books
+WHERE isbn = '9780000000017'
+RETURNING book_id, title;
+ book_id |        title         
+---------+----------------------
+      17 | Crime and Punishment
+(1 row)
+
+DELETE 1
+DELETE FROM authors
+WHERE name = 'Fyodor Dostoevsky'
+RETURNING author_id, name;
+ author_id |       name        
+-----------+-------------------
+         9 | Fyodor Dostoevsky
+(1 row)
+
+DELETE 1
+SELECT
+    (SELECT count(*) FROM books)   AS books,
+    (SELECT count(*) FROM authors) AS authors;
+ books | authors 
+-------+---------
+    16 |       8
+(1 row)
+
