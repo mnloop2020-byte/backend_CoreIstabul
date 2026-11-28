@@ -1,0 +1,22 @@
+// Prisma schema: describes the database tables and generates a typed client.
+// After changing a model, run `npm run prisma:migrate -- --name <change>`.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Same fields as the API's Book (src/models/book.model.ts), so the API responses stay the same.
+model Book {
+  id        Int     @id @default(autoincrement())
+  title     String
+  author    String
+  genre     String
+  available Boolean @default(true) // true = on the shelf, false = borrowed
+
+  @@map("books") // table name in PostgreSQL
+}

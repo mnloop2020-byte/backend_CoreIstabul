@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    // Output modern JavaScript that Node 22 runs natively
+    "target": "ES2022",
+
+    // ESM for Node: imports must use the ".js" extension of the compiled file
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "verbatimModuleSyntax": true,
+
+    // src/*.ts -> dist/*.js
+    "rootDir": "src",
+    "outDir": "dist",
+    "sourceMap": true,
+
+    // Strict type checking
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+
+    "types": ["node"],
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src"]
+}
