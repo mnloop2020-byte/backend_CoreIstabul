@@ -1,0 +1,56 @@
+// Prisma schema: describes the database tables and generates a typed client.
+// After changing a model, run `npm run prisma:migrate -- --name <change>`.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Same fields as the API's Book (src/models/book.model.ts), so the API responses stay the same.
+model Book {
+  id        Int     @id @default(autoincrement())
+  title     String
+  author    String
+  genre     String
+  available Boolean @default(true) // true = on the shelf, false = borrowed
+
+  @@map("books") // table name in PostgreSQL
+}
+
+// USER can view books. ADMIN can also add, update and delete them.
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique // stored in lowercase, so "A@x.com" and "a@x.com" are the same account
+  passwordHash String   @map("password_hash") // bcrypt hash, never the plain password
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+// One row per refresh token given out at login or refresh.
+// Only a SHA-256 hash of the token is stored: if the table leaks, the tokens cannot be used.
+// A token is valid only while it is not revoked and not expired.
+model RefreshToken {
+  id        Int       @id @default(autoincrement())
+  tokenHash String    @unique @map("token_hash")
+  userId    Int       @map("user_id")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(3) // set on logout or when the token is used to refresh
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}

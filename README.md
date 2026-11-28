@@ -9,6 +9,7 @@ Each assignment is a separate project in its own folder, with its own `package.j
 | 3 | Library Book Management API | Express 5, TypeScript, Zod, REST | [assignment-3-library-book-api](./assignment-3-library-book-api) |
 | 4 | AI-Assisted PostgreSQL Database Project (library database) | PostgreSQL 18, SQL | [assignment-4-postgresql-library-db](./assignment-4-postgresql-library-db) |
 | 5 | Library Book Management API with Prisma ORM and PostgreSQL (Session 6) | Express 5, TypeScript, Zod, Prisma 7, PostgreSQL | [assignment-5-library-api-prisma](./assignment-5-library-api-prisma) |
+| 6 | Secure Your Library API: JWT authentication and USER/ADMIN roles (Session 7) | Express 5, TypeScript, Prisma 7, PostgreSQL, bcrypt, JWT | [assignment-6-library-api-auth](./assignment-6-library-api-auth) |
 
 ## How to Run an Assignment
 
@@ -16,11 +17,11 @@ Each assignment is a separate project in its own folder, with its own `package.j
 cd <assignment-folder>
 npm install   # only needed if the assignment has dependencies
 npm start     # assignment 1
-npm run dev   # assignments 2, 3 and 5
+npm run dev   # assignments 2, 3, 5 and 6
 ```
 
 Assignment 4 is SQL only: run `bash run-all.sh` in its folder (see its README).
-Assignment 5 needs PostgreSQL and a `.env` file first (see its README).
+Assignments 5 and 6 need PostgreSQL and a `.env` file first (see their READMEs).
 
 See each folder's README for details.
 
